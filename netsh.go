@@ -18,13 +18,10 @@ package netsh
 
 import (
 	"fmt"
-	"net"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/golang/glog"
 	utilexec "k8s.io/utils/exec"
@@ -36,20 +33,19 @@ type Interface interface {
 	EnsurePortProxyRule(args []string) (bool, error)
 	// DeletePortProxyRule deletes the specified portproxy rule.  If the rule did not exist, return error.
 	DeletePortProxyRule(args []string) error
-	// EnsureIPAddress checks if the specified IP Address is added to vEthernet (HNSTransparent) interface, if not, add it.  If the address existed, return true.
-	EnsureIPAddress(args []string, ip net.IP) (bool, error)
 	// DeleteIPAddress checks if the specified IP address is present and, if so, deletes it.
 	DeleteIPAddress(args []string) error
 	// Restore runs `netsh exec` to restore portproxy or addresses using a file.
 	// TODO Check if this is required, most likely not
 	Restore(args []string) error
-
-	// GetInterfaceToAddIP returns the interface name where Service IP needs to be added
-	// IP Address needs to be added for netsh portproxy to redirect traffic
-	// Reads Environment variable INTERFACE_TO_ADD_SERVICE_IP, if it is not defined then "vEthernet (HNSTransparent)" is returned
-	GetInterfaceToAddIP() string
-
+	// Get the interface name that has the default gateway
 	GetDefaultGatewayIfaceName() (string, error)
+	// Get a list of interfaces and addresses
+	GetInterfaces() ([]Ipv4Interface, error)
+	// Gets an interface by name
+	GetInterfaceByName(name string) (Ipv4Interface, error)
+	// Gets an interface by ip address in the format a.b.c.d
+	GetInterfaceByIP(ipAddr string) (Ipv4Interface, error)
 }
 
 const (
@@ -62,8 +58,8 @@ type runner struct {
 	exec utilexec.Interface
 }
 
-// models IPv4 interface output from: netsh interface ipv4 show addresses
-type ipv4interface struct {
+// Ipv4Interface models IPv4 interface output from: netsh interface ipv4 show addresses
+type Ipv4Interface struct {
 	name                  string
 	interfaceMetric       int
 	dhcpEnabled           bool
@@ -79,6 +75,76 @@ func New(exec utilexec.Interface) Interface {
 		exec: exec,
 	}
 	return runner
+}
+
+// GetInterfaces uses the show addresses command and returns a formatted structure
+func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
+	args := []string{
+		"interface", "ipv4", "show", "addresses",
+	}
+
+	output, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	interfacesString := string(output[:])
+
+	outputLines := strings.Split(interfacesString, "\n")
+	var interfaces []Ipv4Interface
+	var currentInterface Ipv4Interface
+	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
+	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
+	for _, outputLine := range outputLines {
+		if strings.Contains(outputLine, "Configuration for interface") {
+			if currentInterface != (Ipv4Interface{}) {
+				interfaces = append(interfaces, currentInterface)
+			}
+			match := quotedPattern.FindStringSubmatch(outputLine)
+			currentInterface = Ipv4Interface{
+				name: match[1],
+			}
+		} else {
+			parts := strings.SplitN(outputLine, ":", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			if strings.HasPrefix(key, "DHCP enabled") {
+				if value == "Yes" {
+					currentInterface.dhcpEnabled = true
+				}
+			} else if strings.HasPrefix(key, "InterfaceMetric") {
+				if val, err := strconv.Atoi(value); err == nil {
+					currentInterface.interfaceMetric = val
+				}
+			} else if strings.HasPrefix(key, "Gateway Metric") {
+				if val, err := strconv.Atoi(value); err == nil {
+					currentInterface.gatewayMetric = val
+				}
+			} else if strings.HasPrefix(key, "Subnet Prefix") {
+				match := cidrPattern.FindStringSubmatch(value)
+				if val, err := strconv.Atoi(match[1]); err == nil {
+					currentInterface.subnetPrefix = val
+				}
+			} else if strings.HasPrefix(key, "IP Address") {
+				currentInterface.ipAddress = value
+			} else if strings.HasPrefix(key, "Default Gateway") {
+				currentInterface.defaultGatewayAddress = value
+			}
+		}
+	}
+
+	// add the last one
+	if currentInterface != (Ipv4Interface{}) {
+		interfaces = append(interfaces, currentInterface)
+	}
+
+	if len(interfaces) == 0 {
+		return nil, fmt.Errorf("no interfaces found in netsh output: %v", interfacesString)
+	}
+
+	return interfaces, nil
 }
 
 // EnsurePortProxyRule checks if the specified redirect exists, if not creates it.
@@ -118,50 +184,6 @@ func (runner *runner) DeletePortProxyRule(args []string) error {
 	return fmt.Errorf("error deleting portproxy rule: %v: %s", err, out)
 }
 
-// EnsureIPAddress checks if the specified IP Address is added to interface identified by Environment variable INTERFACE_TO_ADD_SERVICE_IP, if not, add it.  If the address existed, return true.
-func (runner *runner) EnsureIPAddress(args []string, ip net.IP) (bool, error) {
-	// Check if the ip address exists
-	intName := runner.GetInterfaceToAddIP()
-	argsShowAddress := []string{
-		"interface", "ipv4", "show", "address",
-		"name=" + intName,
-	}
-
-	ipToCheck := ip.String()
-
-	exists, _ := checkIPExists(ipToCheck, argsShowAddress, runner)
-	if exists == true {
-		glog.V(4).Infof("not adding IP address %q as it already exists", ipToCheck)
-		return true, nil
-	}
-
-	// IP Address is not already added, add it now
-	glog.V(4).Infof("running netsh interface ipv4 add address %v", args)
-	out, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
-
-	if err == nil {
-		// Once the IP Address is added, it takes a bit to initialize and show up when querying for it
-		// Query all the IP addresses and see if the one we added is present
-		// PS: We are using netsh interface ipv4 show address here to query all the IP addresses, instead of
-		// querying net.InterfaceAddrs() as it returns the IP address as soon as it is added even though it is uninitialized
-		glog.V(3).Infof("Waiting until IP: %v is added to the network adapter", ipToCheck)
-		for {
-			if exists, _ := checkIPExists(ipToCheck, argsShowAddress, runner); exists {
-				return true, nil
-			}
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
-	if ee, ok := err.(utilexec.ExitError); ok {
-		// netsh uses exit(0) to indicate a success of the operation,
-		// as compared to a malformed commandline, for example.
-		if ee.Exited() && ee.ExitStatus() != 0 {
-			return false, nil
-		}
-	}
-	return false, fmt.Errorf("error adding ipv4 address: %v: %s", err, out)
-}
-
 // DeleteIPAddress checks if the specified IP address is present and, if so, deletes it.
 func (runner *runner) DeleteIPAddress(args []string) error {
 	glog.V(4).Infof("running netsh interface ipv4 delete address %v", args)
@@ -180,18 +202,8 @@ func (runner *runner) DeleteIPAddress(args []string) error {
 	return fmt.Errorf("error deleting ipv4 address: %v: %s", err, out)
 }
 
-// GetInterfaceToAddIP returns the interface name where Service IP needs to be added
-// IP Address needs to be added for netsh portproxy to redirect traffic
-// Reads Environment variable INTERFACE_TO_ADD_SERVICE_IP, if it is not defined then "vEthernet (HNS Internal NIC)" is returned
-func (runner *runner) GetInterfaceToAddIP() string {
-	if iface := os.Getenv("INTERFACE_TO_ADD_SERVICE_IP"); len(iface) > 0 {
-		return iface
-	}
-	return "vEthernet (HNS Internal NIC)"
-}
-
 func (runner *runner) GetDefaultGatewayIfaceName() (string, error) {
-	interfaces, err := runner.getInterfaces()
+	interfaces, err := runner.GetInterfaces()
 	if err != nil {
 		return "", err
 	}
@@ -206,98 +218,39 @@ func (runner *runner) GetDefaultGatewayIfaceName() (string, error) {
 	return "", fmt.Errorf("Default interface not found")
 }
 
-func (runner *runner) getInterfaces() ([]ipv4interface, error) {
-	args := []string{
-		"interface", "ipv4", "show", "addresses",
-	}
-
-	output, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
+func (runner *runner) GetInterfaceByName(name string) (Ipv4Interface, error) {
+	interfaces, err := runner.GetInterfaces()
 	if err != nil {
-		return nil, err
+		return Ipv4Interface{}, err
 	}
-	interfacesString := string(output[:])
 
-	outputLines := strings.Split(interfacesString, "\n")
-	var interfaces []ipv4interface
-	var currentInterface ipv4interface
-	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
-	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
-	for _, outputLine := range outputLines {
-		if strings.Contains(outputLine, "Configuration for interface") {
-			if currentInterface != (ipv4interface{}) {
-				interfaces = append(interfaces, currentInterface)
-			}
-			match := quotedPattern.FindStringSubmatch(outputLine)
-			currentInterface = ipv4interface{
-				name: match[1],
-			}
-		} else {
-			parts := strings.SplitN(outputLine, ":", 2)
-			if len(parts) != 2 {
-				continue
-			}
-			key := strings.TrimSpace(parts[0])
-			value := strings.TrimSpace(parts[1])
-			if strings.HasPrefix(key, "DHCP enabled") {
-				if value == "Yes" {
-					currentInterface.dhcpEnabled = true
-				}
-			} else if strings.HasPrefix(key, "InterfaceMetric") {
-				if val, err := strconv.Atoi(value); err == nil {
-					currentInterface.interfaceMetric = val
-				}
-			} else if strings.HasPrefix(key, "Gateway Metric") {
-				if val, err := strconv.Atoi(value); err == nil {
-					currentInterface.gatewayMetric = val
-				}
-			} else if strings.HasPrefix(key, "Subnet Prefix") {
-				match := cidrPattern.FindStringSubmatch(value)
-				if val, err := strconv.Atoi(match[1]); err == nil {
-					currentInterface.subnetPrefix = val
-				}
-			} else if strings.HasPrefix(key, "IP Address") {
-				currentInterface.ipAddress = value
-			} else if strings.HasPrefix(key, "Default Gateway") {
-				currentInterface.defaultGatewayAddress = value
-			}
+	for _, iface := range interfaces {
+		if iface.name == name {
+			return iface, nil
 		}
 	}
 
-	// add the last one
-	if currentInterface != (ipv4interface{}) {
-		interfaces = append(interfaces, currentInterface)
+	// return "not found"
+	return Ipv4Interface{}, fmt.Errorf("Interface not found: %v", name)
+}
+
+func (runner *runner) GetInterfaceByIP(ipAddr string) (Ipv4Interface, error) {
+	interfaces, err := runner.GetInterfaces()
+	if err != nil {
+		return Ipv4Interface{}, err
 	}
 
-	if len(interfaces) == 0 {
-		return nil, fmt.Errorf("no interfaces found in netsh output: %v", interfacesString)
+	for _, iface := range interfaces {
+		if iface.ipAddress == ipAddr {
+			return iface, nil
+		}
 	}
 
-	return interfaces, nil
+	// return "not found"
+	return Ipv4Interface{}, fmt.Errorf("Interface not found: %v", ipAddr)
 }
 
 // Restore is part of Interface.
 func (runner *runner) Restore(args []string) error {
 	return nil
-}
-
-// checkIPExists checks if an IP address exists in 'netsh interface ipv4 show address' output
-func checkIPExists(ipToCheck string, args []string, runner *runner) (bool, error) {
-	ipAddress, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
-	if err != nil {
-		return false, err
-	}
-	ipAddressString := string(ipAddress[:])
-	glog.V(3).Infof("Searching for IP: %v in IP dump: %v", ipToCheck, ipAddressString)
-	showAddressArray := strings.Split(ipAddressString, "\n")
-	for _, showAddress := range showAddressArray {
-		if strings.Contains(showAddress, "IP Address:") {
-			ipFromNetsh := strings.TrimLeft(showAddress, "IP Address:")
-			ipFromNetsh = strings.TrimSpace(ipFromNetsh)
-			if ipFromNetsh == ipToCheck {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
 }

@@ -62,12 +62,12 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.getInterfaces()
+	interfaces, err := runner.GetInterfaces()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
 	assert.EqualValues(t, 5, len(interfaces))
-	assert.EqualValues(t, ipv4interface{
+	assert.EqualValues(t, Ipv4Interface{
 		dhcpEnabled:           true,
 		ipAddress:             "10.88.48.68",
 		subnetPrefix:          22,
@@ -97,15 +97,15 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.getInterfaces()
+	interfaces, err := runner.GetInterfaces()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	interfaces, err = runner.getInterfaces()
+	interfaces, err = runner.GetInterfaces()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	interfaces, err = runner.getInterfaces()
+	interfaces, err = runner.GetInterfaces()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 

@@ -17,8 +17,6 @@ limitations under the License.
 package testing
 
 import (
-	"net"
-
 	netsh "github.com/rakelkar/gonetsh"
 )
 
@@ -30,6 +28,11 @@ func NewFake() *FakeNetsh {
 	return &FakeNetsh{}
 }
 
+// GetInterfaces uses the show addresses command and returns a formatted structure
+func (*FakeNetsh) GetInterfaces() ([]netsh.Ipv4Interface, error) {
+	return nil, nil
+}
+
 func (*FakeNetsh) EnsurePortProxyRule(args []string) (bool, error) {
 	return true, nil
 }
@@ -38,11 +41,6 @@ func (*FakeNetsh) EnsurePortProxyRule(args []string) (bool, error) {
 func (*FakeNetsh) DeletePortProxyRule(args []string) error {
 	// Do Nothing
 	return nil
-}
-
-// EnsureIPAddress checks if the specified IP Address is added to vEthernet (HNSTransparent) interface, if not, add it.  If the address existed, return true.
-func (*FakeNetsh) EnsureIPAddress(args []string, ip net.IP) (bool, error) {
-	return true, nil
 }
 
 // DeleteIPAddress checks if the specified IP address is present and, if so, deletes it.
@@ -58,16 +56,19 @@ func (*FakeNetsh) Restore(args []string) error {
 	return nil
 }
 
-// GetInterfaceToAddIP returns the interface name where Service IP needs to be added
-// IP Address needs to be added for netsh portproxy to redirect traffic
-// Reads Environment variable INTERFACE_TO_ADD_SERVICE_IP, if it is not defined then "vEthernet (HNSTransparent)" is returned
-func (*FakeNetsh) GetInterfaceToAddIP() string {
-	return "Interface 1"
-}
-
 // GetDefaultGatewayIfaceName returns a fake default interface
 func (*FakeNetsh) GetDefaultGatewayIfaceName() (string, error) {
 	return "Some Default Interface 1", nil
+}
+
+// Gets an interface by name
+func (*FakeNetsh) GetInterfaceByName(name string) (netsh.Ipv4Interface, error) {
+	return netsh.Ipv4Interface{}, nil
+}
+
+// Gets an interface by ip address
+func (*FakeNetsh) GetInterfaceByIP(ipAddr string) (netsh.Ipv4Interface, error) {
+	return netsh.Ipv4Interface{}, nil
 }
 
 var _ = netsh.Interface(&FakeNetsh{})

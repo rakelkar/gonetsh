@@ -6,22 +6,20 @@ import (
 	"testing"
 
 	netsh "github.com/rakelkar/gonetsh"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/exec"
 )
 
-func TestGetInterfaceToAddIP(t *testing.T) {
-	execer := exec.New()
-	h := netsh.New(execer)
-	ifname := h.GetInterfaceToAddIP()
-	t.Log(ifname)
+func TestGetInterfaces(t *testing.T) {
+	h := netsh.New(exec.New())
+	interfaces, err := h.GetInterfaces()
+	assert.NoError(t, err)
+	t.Logf("%+v", interfaces)
 }
 
 func TestGetDefaultGatewayIfaceName(t *testing.T) {
-	execer := exec.New()
-	h := netsh.New(execer)
+	h := netsh.New(exec.New())
 	ifname, err := h.GetDefaultGatewayIfaceName()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	t.Logf("Default interface is: '%v'", ifname)
 }
