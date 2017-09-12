@@ -1,4 +1,4 @@
-// haha+build integration
+// +build integration
 
 package netsh_test
 
