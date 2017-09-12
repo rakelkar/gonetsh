@@ -68,13 +68,13 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
 	assert.EqualValues(t, 5, len(interfaces))
 	assert.EqualValues(t, Ipv4Interface{
-		dhcpEnabled:           true,
-		ipAddress:             "10.88.48.68",
-		subnetPrefix:          22,
-		defaultGatewayAddress: "10.88.48.1",
-		gatewayMetric:         0,
-		interfaceMetric:       35,
-		name:                  "Wi-Fi",
+		DhcpEnabled:           true,
+		IpAddress:             "10.88.48.68",
+		SubnetPrefix:          22,
+		DefaultGatewayAddress: "10.88.48.1",
+		GatewayMetric:         0,
+		InterfaceMetric:       35,
+		Name:                  "Wi-Fi",
 	}, interfaces[2])
 }
 

@@ -60,17 +60,22 @@ type runner struct {
 
 // Ipv4Interface models IPv4 interface output from: netsh interface ipv4 show addresses
 type Ipv4Interface struct {
-	name                  string
-	interfaceMetric       int
-	dhcpEnabled           bool
-	ipAddress             string
-	subnetPrefix          int
-	gatewayMetric         int
-	defaultGatewayAddress string
+	Name                  string
+	InterfaceMetric       int
+	DhcpEnabled           bool
+	IpAddress             string
+	SubnetPrefix          int
+	GatewayMetric         int
+	DefaultGatewayAddress string
 }
 
 // New returns a new Interface which will exec netsh.
 func New(exec utilexec.Interface) Interface {
+
+	if exec == nil {
+		exec = utilexec.New()
+	}
+
 	runner := &runner{
 		exec: exec,
 	}
@@ -101,7 +106,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 			}
 			match := quotedPattern.FindStringSubmatch(outputLine)
 			currentInterface = Ipv4Interface{
-				name: match[1],
+				Name: match[1],
 			}
 		} else {
 			parts := strings.SplitN(outputLine, ":", 2)
@@ -112,25 +117,25 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 			value := strings.TrimSpace(parts[1])
 			if strings.HasPrefix(key, "DHCP enabled") {
 				if value == "Yes" {
-					currentInterface.dhcpEnabled = true
+					currentInterface.DhcpEnabled = true
 				}
 			} else if strings.HasPrefix(key, "InterfaceMetric") {
 				if val, err := strconv.Atoi(value); err == nil {
-					currentInterface.interfaceMetric = val
+					currentInterface.InterfaceMetric = val
 				}
 			} else if strings.HasPrefix(key, "Gateway Metric") {
 				if val, err := strconv.Atoi(value); err == nil {
-					currentInterface.gatewayMetric = val
+					currentInterface.GatewayMetric = val
 				}
 			} else if strings.HasPrefix(key, "Subnet Prefix") {
 				match := cidrPattern.FindStringSubmatch(value)
 				if val, err := strconv.Atoi(match[1]); err == nil {
-					currentInterface.subnetPrefix = val
+					currentInterface.SubnetPrefix = val
 				}
 			} else if strings.HasPrefix(key, "IP Address") {
-				currentInterface.ipAddress = value
+				currentInterface.IpAddress = value
 			} else if strings.HasPrefix(key, "Default Gateway") {
-				currentInterface.defaultGatewayAddress = value
+				currentInterface.DefaultGatewayAddress = value
 			}
 		}
 	}
@@ -209,8 +214,8 @@ func (runner *runner) GetDefaultGatewayIfaceName() (string, error) {
 	}
 
 	for _, iface := range interfaces {
-		if iface.defaultGatewayAddress != "" {
-			return iface.name, nil
+		if iface.DefaultGatewayAddress != "" {
+			return iface.Name, nil
 		}
 	}
 
@@ -225,7 +230,7 @@ func (runner *runner) GetInterfaceByName(name string) (Ipv4Interface, error) {
 	}
 
 	for _, iface := range interfaces {
-		if iface.name == name {
+		if iface.Name == name {
 			return iface, nil
 		}
 	}
@@ -241,7 +246,7 @@ func (runner *runner) GetInterfaceByIP(ipAddr string) (Ipv4Interface, error) {
 	}
 
 	for _, iface := range interfaces {
-		if iface.ipAddress == ipAddr {
+		if iface.IpAddress == ipAddr {
 			return iface, nil
 		}
 	}
