@@ -17,7 +17,7 @@ limitations under the License.
 package testing
 
 import (
-	netsh "github.com/rakelkar/gonetsh"
+	netsh "github.com/rakelkar/gonetsh/netsh"
 )
 
 // no-op implementation of netsh Interface
