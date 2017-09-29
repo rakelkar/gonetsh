@@ -1,6 +1,6 @@
 // +build integration
 
-package netsh_test
+package gonetsh
 
 import (
 	"testing"
@@ -15,6 +15,13 @@ func TestGetInterfaces(t *testing.T) {
 	interfaces, err := h.GetInterfaces()
 	assert.NoError(t, err)
 	t.Logf("%+v", interfaces)
+}
+
+func TestGetInterfaceByName(t *testing.T) {
+	h := netsh.New(exec.New())
+	netInterface, err := h.GetInterfaceByName("Ethernet")
+	assert.NoError(t, err)
+	t.Logf("%+v", netInterface)
 }
 
 func TestGetDefaultGatewayIfaceName(t *testing.T) {
