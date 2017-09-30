@@ -74,9 +74,9 @@ func GetAllRoutesTest(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t,3, len(routes))
-	assert.Equal(t, "192.168.10.0/24", routes[2].destinationSubnet.String())
-	assert.Equal(t, 12, routes[2].linkIndex)
-	assert.Equal(t, "10.244.0.1", routes[2].gatewayAddress)
+	assert.Equal(t, "192.168.10.0/24", routes[2].DestinationSubnet.String())
+	assert.Equal(t, 12, routes[2].LinkIndex)
+	assert.Equal(t, "10.244.0.1", routes[2].GatewayAddress)
 	assert.True(t, routes[0].Equal(routes[0]))
 	assert.False(t, routes[0].Equal(routes[1]))
 }
