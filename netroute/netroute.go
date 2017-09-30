@@ -26,14 +26,17 @@ type Interface interface {
 
 	// Remove an existing route
 	RemoveNetRoute(linkIndex int, destinationSubnet *net.IPNet, gatewayAddress net.IP) error
+
+	// exit the shell
+	Exit()
 }
 
 type Route struct {
-	linkIndex         int
-	destinationSubnet *net.IPNet
-	gatewayAddress    net.IP
-	routeMetric       int
-	ifMetric          int
+	LinkIndex         int
+	DestinationSubnet *net.IPNet
+	GatewayAddress    net.IP
+	RouteMetric       int
+	IfMetric          int
 }
 
 type shell struct {
@@ -53,6 +56,7 @@ func New() Interface {
 
 func (shell *shell) Exit() {
 	shell.shellInstance.Exit()
+	shell.shellInstance = nil
 }
 
 func (shell *shell) GetNetRoutesAll() ([]Route, error) {
@@ -116,9 +120,9 @@ func parseRoutesList(stdout string) []Route {
 			continue
 		}
 		route := Route{
-			destinationSubnet: destinationSubnet,
-			gatewayAddress:    gatewayAddress,
-			linkIndex:         linkIndex,
+			DestinationSubnet: destinationSubnet,
+			GatewayAddress:    gatewayAddress,
+			LinkIndex:         linkIndex,
 		}
 
 		routes = append(routes, route)
@@ -128,7 +132,7 @@ func parseRoutesList(stdout string) []Route {
 }
 
 func (r *Route) Equal(route Route) bool {
-	if r.destinationSubnet.IP.Equal(route.destinationSubnet.IP) && r.gatewayAddress.Equal(route.gatewayAddress) && bytes.Equal(r.destinationSubnet.Mask, route.destinationSubnet.Mask) {
+	if r.DestinationSubnet.IP.Equal(route.DestinationSubnet.IP) && r.GatewayAddress.Equal(route.GatewayAddress) && bytes.Equal(r.DestinationSubnet.Mask, route.DestinationSubnet.Mask) {
 		return true
 	}
 
