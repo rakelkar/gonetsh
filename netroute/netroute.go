@@ -77,7 +77,7 @@ func (shell *shell) GetNetRoutes(linkIndex int, destinationSubnet *net.IPNet) ([
 }
 
 func (shell *shell) RemoveNetRoute(linkIndex int, destinationSubnet *net.IPNet, gatewayAddress net.IP) error {
-	removeRouteCmdLine := fmt.Sprintf("remove-netroute -InterfaceIndex %v -DestinationPrefix %v -NextHop  %v -Verbose", linkIndex, destinationSubnet.String(), gatewayAddress.String())
+	removeRouteCmdLine := fmt.Sprintf("remove-netroute -InterfaceIndex %v -DestinationPrefix %v -NextHop  %v -Verbose -Confirm:$false", linkIndex, destinationSubnet.String(), gatewayAddress.String())
 	_, err := shell.runScript(removeRouteCmdLine)
 
 	return err
