@@ -10,4 +10,7 @@ A simple set of GO functions to wrap windows netsh commands. Inspired by the net
 
 ## Integration Test
 Integration tests actually runs netsh on your machine...
-`go test -tags=integration -v`
+```$bash
+go test -tags=integration -v ./netroute
+go test -tags=integration -v ./netsh
+```

@@ -70,5 +70,8 @@ func (*FakeNetsh) GetInterfaceByName(name string) (netsh.Ipv4Interface, error) {
 func (*FakeNetsh) GetInterfaceByIP(ipAddr string) (netsh.Ipv4Interface, error) {
 	return netsh.Ipv4Interface{}, nil
 }
-
+// Enable forwarding on the interface (name or index)
+func (*FakeNetsh) EnableForwarding(iface string) error {
+	return nil
+}
 var _ = netsh.Interface(&FakeNetsh{})

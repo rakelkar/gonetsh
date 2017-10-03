@@ -1,4 +1,4 @@
-package gonetsh
+package netsh
 
 import (
 	"strings"

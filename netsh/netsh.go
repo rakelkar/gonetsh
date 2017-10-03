@@ -1,4 +1,4 @@
-package gonetsh
+package netsh
 
 import (
 	"fmt"
@@ -30,6 +30,8 @@ type Interface interface {
 	GetInterfaceByName(name string) (Ipv4Interface, error)
 	// Gets an interface by ip address in the format a.b.c.d
 	GetInterfaceByIP(ipAddr string) (Ipv4Interface, error)
+	// Enable forwarding on the interface (name or index)
+	EnableForwarding(iface string) error
 }
 
 const (
@@ -134,6 +136,17 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	}
 
 	return interfaces, nil
+}
+
+// Enable forwarding on the interface (name or index)
+func (runner *runner) EnableForwarding(iface string) error {
+	args := []string{
+		"int", "ipv4", "set", "int", iface, "for=en",
+	}
+	glog.V(4).Infof(" netsh int ipv4 set int running netsh interface portproxy add v4tov4 %v", args)
+	_, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
+
+	return err
 }
 
 // EnsurePortProxyRule checks if the specified redirect exists, if not creates it.
