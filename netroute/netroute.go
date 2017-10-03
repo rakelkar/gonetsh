@@ -11,6 +11,7 @@ import (
 	psbe "github.com/gorillalabs/go-powershell/backend"
 
 	"fmt"
+	"math/big"
 )
 
 // Interface is an injectable interface for running MSFT_NetRoute commands. Implementations must be goroutine-safe.
@@ -147,4 +148,15 @@ func (shell *shell) runScript(cmdLine string) (string, error) {
 	}
 
 	return stdout, nil
+}
+
+func IpToInt(ip net.IP) *big.Int {
+	if v := ip.To4(); v != nil {
+		return big.NewInt(0).SetBytes(v)
+	}
+	return big.NewInt(0).SetBytes(ip.To16())
+}
+
+func IntToIP(i *big.Int) net.IP {
+	return net.IP(i.Bytes())
 }
