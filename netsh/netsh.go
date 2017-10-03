@@ -141,12 +141,15 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 // Enable forwarding on the interface (name or index)
 func (runner *runner) EnableForwarding(iface string) error {
 	args := []string{
-		"int", "ipv4", "set", "int", iface, "for=en",
+		"int", "ipv4", "set", "int", strconv.Quote(iface), "for=en",
 	}
-	glog.V(4).Infof(" netsh int ipv4 set int running netsh interface portproxy add v4tov4 %v", args)
-	_, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
+	cmd := strings.Join(args, " ")
+	glog.V(4).Infof(cmd)
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to enable forwarding on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
 
-	return err
+	return nil
 }
 
 // EnsurePortProxyRule checks if the specified redirect exists, if not creates it.
