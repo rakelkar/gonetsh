@@ -32,6 +32,8 @@ type Interface interface {
 	GetInterfaceByIP(ipAddr string) (Ipv4Interface, error)
 	// Enable forwarding on the interface (name or index)
 	EnableForwarding(iface string) error
+	// Gets a map of interface names to their indexes
+	GetInterfaceNameToIndexMap() (map[string]int, error)
 }
 
 const (
@@ -93,7 +95,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
 
 	// Retrieve interface index map
-	indexMap, err := runner.GetInterfaceInternal()
+	indexMap, err := runner.GetInterfaceNameToIndexMap()
 
 	for _, outputLine := range outputLines {
 		if strings.Contains(outputLine, "Configuration for interface") {
@@ -153,7 +155,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func (runner *runner) GetInterfaceInternal() (map[string]int, error) {
+func (runner *runner) GetInterfaceNameToIndexMap() (map[string]int, error) {
 	args := []string {
 		"interface", "ipv4", "show", "interfaces",
 	}
@@ -166,21 +168,23 @@ func (runner *runner) GetInterfaceInternal() (map[string]int, error) {
 
 	// Split output by line
 	outputString := string(output[:])
-	outputLines := strings.Split(outputString, "\n")
+	outputString = strings.TrimSpace(outputString)
+	var outputLines []string = strings.Split(outputString, "\n")
 
 	// Remove first two lines of header text
 	outputLines = outputLines[2:]
 
-	var indexMap map[string] int
+	indexMap := make(map[string] int)
 
 	for _, line := range outputLines {
 		// Split the line by whitespace-delimited fields
 		splitLine := strings.Fields(line)
 
 		name := splitLine[4]
-		idx := int(splitLine[0])
+		if idx, err := strconv.Atoi(splitLine[0]); err == nil {
+			indexMap[name] = idx
+		}
 
-		indexMap[name] = idx
 	}
 
 	return indexMap, nil

@@ -53,6 +53,17 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 
 	`), nil
 			},
+			func() ([]byte, error) {
+				return []byte(`
+
+Idx     Met         MTU          State                Name
+---  ----------  ----------  ------------  ---------------------------
+  9          25        1500  connected     Ethernet
+  1          75  4294967295  connected     Loopback Pseudo-Interface 1
+  2          15        1500  connected     vEthernet (New Virtual Switch)
+ 14          15        1500  connected     vEthernet (HNS Internal NIC)
+	`), nil
+			},
 		},
 	}
 
@@ -64,7 +75,7 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 
 	interfaces, err := runner.GetInterfaces()
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1, fakeCmd.CombinedOutputCalls)
+	assert.EqualValues(t, 2, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
 	assert.EqualValues(t, 5, len(interfaces))
 	assert.EqualValues(t, Ipv4Interface{
