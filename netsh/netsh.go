@@ -144,7 +144,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func (runner *runner) GetInterfaceInternal() ([]InterfaceStruct) {
+func (runner *runner) GetInterfaceInternal() ([]InterfaceStruct, error) {
 	args := []string {
 		"interface", "ipv4", "show", "interfaces",
 	}
@@ -156,7 +156,7 @@ func (runner *runner) GetInterfaceInternal() ([]InterfaceStruct) {
 	}
 
 	// Split output by line
-	outputString = string(output[:])
+	outputString := string(output[:])
 	outputLines := strings.Split(outputString, "\n")
 
 	// Remove first two lines of header text
@@ -170,9 +170,11 @@ func (runner *runner) GetInterfaceInternal() ([]InterfaceStruct) {
 		splitLine := strings.Fields(line)
 
 		currentInterface = InterfaceStruct{
-			splitLine[0],
+			int(splitLine[0]),
 			splitLine[4],
 		}
+
+		interfaces = append(interfaces, currentInterface)
 	}
 
 	return interfaces, nil
