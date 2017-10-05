@@ -46,6 +46,7 @@ type runner struct {
 
 // Ipv4Interface models IPv4 interface output from: netsh interface ipv4 show addresses
 type Ipv4Interface struct {
+	Idx                   int
 	Name                  string
 	InterfaceMetric       int
 	DhcpEnabled           bool
@@ -53,6 +54,11 @@ type Ipv4Interface struct {
 	SubnetPrefix          int
 	GatewayMetric         int
 	DefaultGatewayAddress string
+}
+
+type InterfaceStruct struct {
+	Idx		int
+	Name	string
 }
 
 // New returns a new Interface which will exec netsh.
@@ -133,6 +139,40 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 
 	if len(interfaces) == 0 {
 		return nil, fmt.Errorf("no interfaces found in netsh output: %v", interfacesString)
+	}
+
+	return interfaces, nil
+}
+
+func (runner *runner) GetInterfaceInternal() ([]InterfaceStruct) {
+	args := []string {
+		"interface", "ipv4", "show", "interfaces",
+	}
+
+	output, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Split output by line
+	outputString = string(output[:])
+	outputLines := strings.Split(outputString, "\n")
+
+	// Remove first two lines of header text
+	outputLines = outputLines[2:]
+
+	var interfaces []InterfaceStruct
+	var currentInterface InterfaceStruct
+
+	for _, line := range outputLines {
+		// Split the line by whitespace-delimited fields
+		splitLine := strings.Fields(line)
+
+		currentInterface = InterfaceStruct{
+			splitLine[0],
+			splitLine[4],
+		}
 	}
 
 	return interfaces, nil
