@@ -183,7 +183,7 @@ func (runner *runner) GetInterfaceNameToIndexMap() (map[string]int, error) {
 
 	for _, line := range outputLines {
 		// Split the line by whitespace-delimited fields
-		splitLine := strings.Fields(line)
+		splitLine := strings.Split(line, "  ")
 
 		name := splitLine[4]
 		if idx, err := strconv.Atoi(splitLine[0]); err == nil {
