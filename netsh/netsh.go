@@ -181,9 +181,11 @@ func (runner *runner) GetInterfaceNameToIndexMap() (map[string]int, error) {
 
 	indexMap := make(map[string] int)
 
+	reg := regexp.MustCompile("\\s{2,}")
+
 	for _, line := range outputLines {
-		// Split the line by whitespace-delimited fields
-		splitLine := strings.Split(line, "  ")
+		// Split the line by two or more whitespace characters, returning all substrings (n < 0)
+		splitLine := reg.Split(line, -1)
 
 		name := splitLine[4]
 		if idx, err := strconv.Atoi(splitLine[0]); err == nil {
