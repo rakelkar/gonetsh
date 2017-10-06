@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/glog"
 	utilexec "k8s.io/utils/exec"
+	"errors"
 )
 
 // Interface is an injectable interface for running netsh commands.  Implementations must be goroutine-safe.
@@ -170,6 +171,10 @@ func (runner *runner) GetInterfaceNameToIndexMap() (map[string]int, error) {
 	outputString := string(output[:])
 	outputString = strings.TrimSpace(outputString)
 	var outputLines []string = strings.Split(outputString, "\n")
+
+	if len(outputLines) < 3 {
+		return nil, errors.New("netsh bad")
+	}
 
 	// Remove first two lines of header text
 	outputLines = outputLines[2:]

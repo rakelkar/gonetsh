@@ -97,8 +97,10 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 			func() ([]byte, error) { return nil, &utilexec.FakeExitError{Status: 2} },
 			// Empty Response.
 			func() ([]byte, error) { return []byte{}, nil },
+			func() ([]byte, error) { return []byte(" "), nil },
 			// Junk Response.
 			func() ([]byte, error) { return []byte("fake error from netsh"), nil },
+			func() ([]byte, error) { return []byte(" "), nil },
 		},
 	}
 
@@ -120,6 +122,6 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	assert.EqualValues(t, 3, fakeCmd.CombinedOutputCalls)
+	assert.EqualValues(t, 5, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
 }
