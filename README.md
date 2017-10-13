@@ -1,4 +1,4 @@
-# gonetsh [https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true](https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true)
+# gonetsh https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true
 
 A simple set of GO functions to wrap windows netsh commands. Inspired by the netsh wrapper in kubernetes. Now also provides netroute that wraps route CRUD powershell commandlets.
 
