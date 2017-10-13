@@ -19,8 +19,8 @@ install:
   - go env
 
 build_script:
-  - go build -v ./...
+  - ps: build.ps1
 
 test_script:
-  - go test -v ./...
+  - ps: test.ps1
 
