@@ -33,8 +33,6 @@ type Interface interface {
 	GetInterfaceByIP(ipAddr string) (Ipv4Interface, error)
 	// Enable forwarding on the interface (name or index)
 	EnableForwarding(iface string) error
-	// Gets a map of interface names to their indexes
-	getInterfaceNameToIndexMap() (map[string]int, error)
 }
 
 const (
@@ -90,7 +88,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
 	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
 
-	indexMap, err := runner.GetInterfaceNameToIndexMap()
+	indexMap, err := GetInterfaceNameToIndexMap(runner)
 
 	for _, outputLine := range outputLines {
 		if strings.Contains(outputLine, "Configuration for interface") {
@@ -150,7 +148,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func (runner *runner) GetInterfaceNameToIndexMap() (map[string]int, error) {
+func GetInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
 	args := []string {
 		"interface", "ipv4", "show", "interfaces",
 	}
