@@ -88,7 +88,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
 	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
 
-	indexMap, err := GetInterfaceNameToIndexMap(runner)
+	indexMap, err := getInterfaceNameToIndexMap(runner)
 
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func GetInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
+func getInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
 	args := []string {
 		"interface", "ipv4", "show", "interfaces",
 	}
@@ -169,7 +169,7 @@ func GetInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
 	// Split output by line
 	outputString := string(output[:])
 	outputString = strings.TrimSpace(outputString)
-	var outputLines []string = strings.Split(outputString, "\n")
+	var outputLines = strings.Split(outputString, "\n")
 
 	if len(outputLines) < 3 {
 		return nil, errors.New("unexpected netsh output:\n" + outputString)
