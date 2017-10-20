@@ -90,6 +90,10 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 
 	indexMap, err := GetInterfaceNameToIndexMap(runner)
 
+	if err != nil {
+		return nil, err
+	}
+
 	for _, outputLine := range outputLines {
 		if strings.Contains(outputLine, "Configuration for interface") {
 			if currentInterface != (Ipv4Interface{}) {
