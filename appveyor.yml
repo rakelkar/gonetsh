@@ -1,0 +1,26 @@
+version: 1.0.0.{build}
+
+platform: x64
+
+branches:
+  only:
+    - master
+
+clone_folder: c:\gopath\src\github.com\rakelkar\gonetsh
+
+environment:
+  GOPATH: c:\gopath
+
+install:
+  - echo %PATH%
+  - echo %GOPATH%
+  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - go version
+  - go env
+
+build_script:
+  - ps: .\build.ps1
+
+test_script:
+  - ps: .\test.ps1
+
