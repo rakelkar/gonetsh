@@ -70,6 +70,35 @@ func New(exec utilexec.Interface) Interface {
 	return runner
 }
 
+func (runner *runner) Ge() ([]Ipv4Interface, error) {
+	// get interfaces
+	interfaces, err := runner.GetInterfaces()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// get indexes
+	indexMap, err := getInterfaceNameToIndexMap(runner)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// zip them up
+	for _, inter := range interfaces {
+		name := inter.Name
+
+		if val, ok := indexMap[name]; ok {
+			inter.Idx = val
+		} else {
+			fmt.Errorf("no index found for interface \"%v\"", name)
+		}
+	}
+
+	return interfaces, nil
+}
+
 // GetInterfaces uses the show addresses command and returns a formatted structure
 func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	args := []string{
