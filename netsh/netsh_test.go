@@ -112,3 +112,35 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 	assert.EqualValues(t, 3, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
 }
+
+func TestGetInterfaceNameToIndexMap(t *testing.T) {
+	fake := utilexec.FakeCmd{
+		CombinedOutputScript: []utilexec.FakeCombinedOutputAction{
+			func() ([]byte, error) { return []byte(`badinput`), nil },
+			func() ([]byte, error) { return []byte(`
+			Idx     Met         MTU          State                Name
+---  ----------  ----------  ------------  ---------------------------
+  9          25        1500  connected     Ethernet
+  1          75  4294967295  connected     Loopback Pseudo-Interface 1
+  2          15        1500  connected     vEthernet (New Virtual Switch)
+ 14          15        1500  connected     vEthernet (HNS Internal NIC)`), nil },
+		},
+	}
+
+	fakeExec := getFakeExecTemplate(&fake)
+
+	runner := runner {
+		exec: &fakeExec,
+	}
+
+	idxMap, err := getInterfaceNameToIndexMap(&runner)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, idxMap)
+
+	idxMap, err = getInterfaceNameToIndexMap(&runner)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, idxMap)
+	assert.Equal(t, 9, idxMap["Ethernet"])
+}

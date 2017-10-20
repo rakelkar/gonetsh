@@ -202,6 +202,9 @@ func getInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
 	reg := regexp.MustCompile("\\s{2,}")
 
 	for _, line := range outputLines {
+
+		line = strings.TrimSpace(line)
+
 		// Split the line by two or more whitespace characters, returning all substrings (n < 0)
 		splitLine := reg.Split(line, -1)
 
