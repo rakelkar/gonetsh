@@ -117,8 +117,6 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
 	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
 
-	indexMap, err := getInterfaceNameToIndexMap(runner)
-
 	if err != nil {
 		return nil, err
 	}
@@ -160,14 +158,6 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 				currentInterface.IpAddress = value
 			} else if strings.HasPrefix(key, "Default Gateway") {
 				currentInterface.DefaultGatewayAddress = value
-			}
-		}
-
-		if currentInterface != (Ipv4Interface{}) {
-			if _, ok := indexMap[currentInterface.Name]; ok {
-				currentInterface.Idx = indexMap[currentInterface.Name]
-			} else {
-				return nil, fmt.Errorf("no interface \"%v\" found when checking indexes", currentInterface.Name)
 			}
 		}
 	}
