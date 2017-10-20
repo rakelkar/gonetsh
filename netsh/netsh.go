@@ -59,11 +59,6 @@ type Ipv4Interface struct {
 	DefaultGatewayAddress string
 }
 
-type InterfaceStruct struct {
-	Idx		int
-	Name	string
-}
-
 // New returns a new Interface which will exec netsh.
 func New(exec utilexec.Interface) Interface {
 
