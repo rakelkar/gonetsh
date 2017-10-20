@@ -172,7 +172,7 @@ func GetInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
 	var outputLines []string = strings.Split(outputString, "\n")
 
 	if len(outputLines) < 3 {
-		return nil, errors.New("netsh bad")
+		return nil, errors.New("unexpected netsh output:\n" + outputString)
 	}
 
 	// Remove first two lines of header text
