@@ -34,7 +34,7 @@ type Interface interface {
 	// Enable forwarding on the interface (name or index)
 	EnableForwarding(iface string) error
 	// Gets a map of interface names to their indexes
-	GetInterfaceNameToIndexMap() (map[string]int, error)
+	getInterfaceNameToIndexMap() (map[string]int, error)
 }
 
 const (
@@ -90,7 +90,6 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
 	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
 
-	// Retrieve interface index map
 	indexMap, err := runner.GetInterfaceNameToIndexMap()
 
 	for _, outputLine := range outputLines {
