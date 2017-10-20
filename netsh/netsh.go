@@ -134,9 +134,12 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 			}
 		}
 
-		// Assign Index based on map
 		if currentInterface != (Ipv4Interface{}) {
-			currentInterface.Idx = indexMap[currentInterface.Name]
+			if _, ok := indexMap[currentInterface.Name]; ok {
+				currentInterface.Idx = indexMap[currentInterface.Name]
+			} else {
+				return nil, fmt.Errorf("no interface \"%v\" found when checking indexes", currentInterface.Name)
+			}
 		}
 	}
 
