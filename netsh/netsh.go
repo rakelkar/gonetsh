@@ -71,18 +71,16 @@ func New(exec utilexec.Interface) Interface {
 }
 
 func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
-	// get interfaces
-	interfaces, err := runner.getIpAddressConfigurations()
+	interfaces, interfaceError := runner.getIpAddressConfigurations()
 
-	if err != nil {
-		return nil, err
+	if interfaceError != nil {
+		return nil, interfaceError
 	}
 
-	// get indexes
-	indexMap, err := runner.getNetworkInterfaceParameters()
+	indexMap, indexError := runner.getNetworkInterfaceParameters()
 
-	if err != nil {
-		return nil, err
+	if indexError != nil {
+		return nil, indexError
 	}
 
 	// zip them up
