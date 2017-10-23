@@ -70,7 +70,7 @@ func New(exec utilexec.Interface) Interface {
 	return runner
 }
 
-func (runner *runner) Ge() ([]Ipv4Interface, error) {
+func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	// get interfaces
 	interfaces, err := runner.GetInterfaces()
 
@@ -100,7 +100,7 @@ func (runner *runner) Ge() ([]Ipv4Interface, error) {
 }
 
 // GetInterfaces uses the show addresses command and returns a formatted structure
-func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
+func (runner *runner) getInterfacesInternal() ([]Ipv4Interface, error) {
 	args := []string{
 		"interface", "ipv4", "show", "addresses",
 	}

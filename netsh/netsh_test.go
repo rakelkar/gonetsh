@@ -62,7 +62,7 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.GetInterfaces()
+	interfaces, err := runner.getInterfacesInternal()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
@@ -97,15 +97,15 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.GetInterfaces()
+	interfaces, err := runner.getInterfacesInternal()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	interfaces, err = runner.GetInterfaces()
+	interfaces, err = runner.getInterfacesInternal()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	interfaces, err = runner.GetInterfaces()
+	interfaces, err = runner.getInterfacesInternal()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
