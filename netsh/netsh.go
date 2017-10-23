@@ -72,14 +72,14 @@ func New(exec utilexec.Interface) Interface {
 
 func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	// get interfaces
-	interfaces, err := runner.getInterfacesInternal()
+	interfaces, err := runner.getIpAddressConfigurations()
 
 	if err != nil {
 		return nil, err
 	}
 
 	// get indexes
-	indexMap, err := getInterfaceNameToIndexMap(runner)
+	indexMap, err := getNetworkInterfaceParameters(runner)
 
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 }
 
 // GetInterfaces uses the show addresses command and returns a formatted structure
-func (runner *runner) getInterfacesInternal() ([]Ipv4Interface, error) {
+func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	args := []string{
 		"interface", "ipv4", "show", "addresses",
 	}
@@ -174,7 +174,7 @@ func (runner *runner) getInterfacesInternal() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func getInterfaceNameToIndexMap(runner* runner) (map[string]int, error) {
+func getNetworkInterfaceParameters(runner* runner) (map[string]int, error) {
 	args := []string {
 		"interface", "ipv4", "show", "interfaces",
 	}

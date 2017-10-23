@@ -62,7 +62,7 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.getInterfacesInternal()
+	interfaces, err := runner.getIpAddressConfigurations()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
@@ -97,15 +97,15 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.getInterfacesInternal()
+	interfaces, err := runner.getIpAddressConfigurations()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	interfaces, err = runner.getInterfacesInternal()
+	interfaces, err = runner.getIpAddressConfigurations()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
-	interfaces, err = runner.getInterfacesInternal()
+	interfaces, err = runner.getIpAddressConfigurations()
 	assert.Error(t, err)
 	assert.Nil(t, interfaces)
 
@@ -134,13 +134,13 @@ func TestGetInterfaceNameToIndexMap(t *testing.T) {
 	}
 
 	// Test bad input
-	idxMap, err := getInterfaceNameToIndexMap(&runner)
+	idxMap, err := getNetworkInterfaceParameters(&runner)
 
 	assert.NotNil(t, err)
 	assert.Nil(t, idxMap)
 
 	// Test good input
-	idxMap, err = getInterfaceNameToIndexMap(&runner)
+	idxMap, err = getNetworkInterfaceParameters(&runner)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, idxMap)
