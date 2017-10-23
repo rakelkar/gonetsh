@@ -72,7 +72,7 @@ func New(exec utilexec.Interface) Interface {
 
 func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	// get interfaces
-	interfaces, err := runner.GetInterfaces()
+	interfaces, err := runner.getInterfacesInternal()
 
 	if err != nil {
 		return nil, err
