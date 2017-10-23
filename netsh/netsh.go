@@ -92,7 +92,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 		if val, ok := indexMap[name]; ok {
 			inter.Idx = val
 		} else {
-			fmt.Errorf("no index found for interface \"%v\"", name)
+			return nil, fmt.Errorf("no index found for interface \"%v\"", name)
 		}
 	}
 
