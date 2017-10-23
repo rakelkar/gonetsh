@@ -117,19 +117,21 @@ func TestGetInterfaceNameToIndexMap(t *testing.T) {
 	fake := utilexec.FakeCmd{
 		CombinedOutputScript: []utilexec.FakeCombinedOutputAction{
 			func() ([]byte, error) { return []byte(`badinput`), nil },
-			func() ([]byte, error) { return []byte(`
+			func() ([]byte, error) {
+				return []byte(`
 			Idx     Met         MTU          State                Name
 ---  ----------  ----------  ------------  ---------------------------
   9          25        1500  connected     Ethernet
   1          75  4294967295  connected     Loopback Pseudo-Interface 1
   2          15        1500  connected     vEthernet (New Virtual Switch)
- 14          15        1500  connected     vEthernet (HNS Internal NIC)`), nil },
+ 14          15        1500  connected     vEthernet (HNS Internal NIC)`), nil
+			},
 		},
 	}
 
 	fakeExec := getFakeExecTemplate(&fake)
 
-	runner := runner {
+	runner := runner{
 		exec: &fakeExec,
 	}
 

@@ -172,8 +172,8 @@ func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func (runner* runner) getNetworkInterfaceParameters() (map[string]int, error) {
-	args := []string {
+func (runner *runner) getNetworkInterfaceParameters() (map[string]int, error) {
+	args := []string{
 		"interface", "ipv4", "show", "interfaces",
 	}
 
@@ -195,7 +195,7 @@ func (runner* runner) getNetworkInterfaceParameters() (map[string]int, error) {
 	// Remove first two lines of header text
 	outputLines = outputLines[2:]
 
-	indexMap := make(map[string] int)
+	indexMap := make(map[string]int)
 
 	reg := regexp.MustCompile("\\s{2,}")
 
