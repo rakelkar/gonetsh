@@ -79,7 +79,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	}
 
 	// get indexes
-	indexMap, err := getNetworkInterfaceParameters(runner)
+	indexMap, err := runner.getNetworkInterfaceParameters()
 
 	if err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	return interfaces, nil
 }
 
-func getNetworkInterfaceParameters(runner* runner) (map[string]int, error) {
+func (runner* runner) getNetworkInterfaceParameters() (map[string]int, error) {
 	args := []string {
 		"interface", "ipv4", "show", "interfaces",
 	}

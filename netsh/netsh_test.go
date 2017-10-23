@@ -134,13 +134,13 @@ func TestGetInterfaceNameToIndexMap(t *testing.T) {
 	}
 
 	// Test bad input
-	idxMap, err := getNetworkInterfaceParameters(&runner)
+	idxMap, err := runner.getNetworkInterfaceParameters()
 
 	assert.NotNil(t, err)
 	assert.Nil(t, idxMap)
 
 	// Test good input
-	idxMap, err = getNetworkInterfaceParameters(&runner)
+	idxMap, err = runner.getNetworkInterfaceParameters()
 
 	assert.Nil(t, err)
 	assert.NotNil(t, idxMap)
