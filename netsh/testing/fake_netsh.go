@@ -33,6 +33,10 @@ func (*FakeNetsh) GetInterfaces() ([]netsh.Ipv4Interface, error) {
 	return nil, nil
 }
 
+func (*FakeNetsh) GetInterfaceNameToIndexMap() (map[string]int, error) {
+	return map[string]int{}, nil
+}
+
 func (*FakeNetsh) EnsurePortProxyRule(args []string) (bool, error) {
 	return true, nil
 }

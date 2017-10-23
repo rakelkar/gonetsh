@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/glog"
 	utilexec "k8s.io/utils/exec"
+	"errors"
 )
 
 // Interface is an injectable interface for running netsh commands.  Implementations must be goroutine-safe.
@@ -46,6 +47,7 @@ type runner struct {
 
 // Ipv4Interface models IPv4 interface output from: netsh interface ipv4 show addresses
 type Ipv4Interface struct {
+	Idx                   int
 	Name                  string
 	InterfaceMetric       int
 	DhcpEnabled           bool
@@ -68,8 +70,35 @@ func New(exec utilexec.Interface) Interface {
 	return runner
 }
 
-// GetInterfaces uses the show addresses command and returns a formatted structure
 func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
+	interfaces, interfaceError := runner.getIpAddressConfigurations()
+
+	if interfaceError != nil {
+		return nil, interfaceError
+	}
+
+	indexMap, indexError := runner.getNetworkInterfaceParameters()
+
+	if indexError != nil {
+		return nil, indexError
+	}
+
+	// zip them up
+	for _, inter := range interfaces {
+		name := inter.Name
+
+		if val, ok := indexMap[name]; ok {
+			inter.Idx = val
+		} else {
+			return nil, fmt.Errorf("no index found for interface \"%v\"", name)
+		}
+	}
+
+	return interfaces, nil
+}
+
+// GetInterfaces uses the show addresses command and returns a formatted structure
+func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	args := []string{
 		"interface", "ipv4", "show", "addresses",
 	}
@@ -85,6 +114,11 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	var currentInterface Ipv4Interface
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
 	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
+
+	if err != nil {
+		return nil, err
+	}
+
 	for _, outputLine := range outputLines {
 		if strings.Contains(outputLine, "Configuration for interface") {
 			if currentInterface != (Ipv4Interface{}) {
@@ -136,6 +170,50 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	}
 
 	return interfaces, nil
+}
+
+func (runner *runner) getNetworkInterfaceParameters() (map[string]int, error) {
+	args := []string{
+		"interface", "ipv4", "show", "interfaces",
+	}
+
+	output, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Split output by line
+	outputString := string(output[:])
+	outputString = strings.TrimSpace(outputString)
+	var outputLines = strings.Split(outputString, "\n")
+
+	if len(outputLines) < 3 {
+		return nil, errors.New("unexpected netsh output:\n" + outputString)
+	}
+
+	// Remove first two lines of header text
+	outputLines = outputLines[2:]
+
+	indexMap := make(map[string]int)
+
+	reg := regexp.MustCompile("\\s{2,}")
+
+	for _, line := range outputLines {
+
+		line = strings.TrimSpace(line)
+
+		// Split the line by two or more whitespace characters, returning all substrings (n < 0)
+		splitLine := reg.Split(line, -1)
+
+		name := splitLine[4]
+		if idx, err := strconv.Atoi(splitLine[0]); err == nil {
+			indexMap[name] = idx
+		}
+
+	}
+
+	return indexMap, nil
 }
 
 // Enable forwarding on the interface (name or index)
