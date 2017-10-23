@@ -133,14 +133,17 @@ func TestGetInterfaceNameToIndexMap(t *testing.T) {
 		exec: &fakeExec,
 	}
 
+	// Test bad input
 	idxMap, err := getInterfaceNameToIndexMap(&runner)
 
 	assert.NotNil(t, err)
 	assert.Nil(t, idxMap)
 
+	// Test good input
 	idxMap, err = getInterfaceNameToIndexMap(&runner)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, idxMap)
 	assert.Equal(t, 9, idxMap["Ethernet"])
+	assert.Equal(t, 14, idxMap["vEthernet (HNS Internal NIC)"])
 }
