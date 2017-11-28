@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/glog"
 	utilexec "k8s.io/utils/exec"
 	"errors"
 )
@@ -222,7 +221,6 @@ func (runner *runner) EnableForwarding(iface string) error {
 		"int", "ipv4", "set", "int", strconv.Quote(iface), "for=en",
 	}
 	cmd := strings.Join(args, " ")
-	glog.V(4).Infof(cmd)
 	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to enable forwarding on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
 	}
@@ -232,7 +230,6 @@ func (runner *runner) EnableForwarding(iface string) error {
 
 // EnsurePortProxyRule checks if the specified redirect exists, if not creates it.
 func (runner *runner) EnsurePortProxyRule(args []string) (bool, error) {
-	glog.V(4).Infof("running netsh interface portproxy add v4tov4 %v", args)
 	out, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
 
 	if err == nil {
@@ -251,7 +248,6 @@ func (runner *runner) EnsurePortProxyRule(args []string) (bool, error) {
 
 // DeletePortProxyRule deletes the specified portproxy rule.  If the rule did not exist, return error.
 func (runner *runner) DeletePortProxyRule(args []string) error {
-	glog.V(4).Infof("running netsh interface portproxy delete v4tov4 %v", args)
 	out, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
 
 	if err == nil {
@@ -269,7 +265,6 @@ func (runner *runner) DeletePortProxyRule(args []string) error {
 
 // DeleteIPAddress checks if the specified IP address is present and, if so, deletes it.
 func (runner *runner) DeleteIPAddress(args []string) error {
-	glog.V(4).Infof("running netsh interface ipv4 delete address %v", args)
 	out, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
 
 	if err == nil {
