@@ -7,8 +7,9 @@ import (
 	"strings"
 	"sync"
 
-	utilexec "k8s.io/utils/exec"
 	"errors"
+
+	utilexec "k8s.io/utils/exec"
 )
 
 // Interface is an injectable interface for running netsh commands.  Implementations must be goroutine-safe.
