@@ -83,11 +83,11 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 	}
 
 	// zip them up
-	for _, inter := range interfaces {
-		name := inter.Name
+	for i := 0; i < len(interfaces); i++ {
+		name := interfaces[i].Name
 
 		if val, ok := indexMap[name]; ok {
-			inter.Idx = val
+			interfaces[i].Idx = val
 		} else {
 			return nil, fmt.Errorf("no index found for interface \"%v\"", name)
 		}
