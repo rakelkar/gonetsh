@@ -21,7 +21,6 @@ func getFakeExecTemplate(fakeCmd *utilexec.FakeCmd) utilexec.FakeExec {
 func TestGetInterfacesGoldenPath(t *testing.T) {
 	fakeCmd := utilexec.FakeCmd{
 		CombinedOutputScript: []utilexec.FakeCombinedOutputAction{
-			// Success.
 			func() ([]byte, error) {
 				return []byte(`
 
@@ -41,10 +40,6 @@ Configuration for interface "Wi-Fi"
     Gateway Metric:                       0
     InterfaceMetric:                      35
 
-Configuration for interface "Bluetooth Network Connection"
-    DHCP enabled:                         Yes
-    InterfaceMetric:                      65
-
 Configuration for interface "Loopback Pseudo-Interface 1"
     DHCP enabled:                         No
     IP Address:                           127.0.0.1
@@ -52,6 +47,15 @@ Configuration for interface "Loopback Pseudo-Interface 1"
     InterfaceMetric:                      75
 
 	`), nil
+			},
+			func() ([]byte, error) {
+				return []byte(`
+			Idx     Met         MTU          State                Name
+---  ----------  ----------  ------------  ---------------------------
+  9          25        1500  connected     Ethernet
+  1          75  4294967295  connected     Loopback Pseudo-Interface 1
+  2          15        1500  connected     Local Area Connection* 1
+ 14          15        1500  connected     Wi-Fi`), nil
 			},
 		},
 	}
@@ -62,12 +66,13 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 		exec: &fakeExec,
 	}
 
-	interfaces, err := runner.getIpAddressConfigurations()
+	interfaces, err := runner.GetInterfaces()
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1, fakeCmd.CombinedOutputCalls)
+	assert.EqualValues(t, 2, fakeCmd.CombinedOutputCalls)
 	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
-	assert.EqualValues(t, 5, len(interfaces))
+	assert.EqualValues(t, 4, len(interfaces))
 	assert.EqualValues(t, Ipv4Interface{
+		Idx:                   14,
 		DhcpEnabled:           true,
 		IpAddress:             "10.88.48.68",
 		SubnetPrefix:          22,
