@@ -1,8 +1,5 @@
 # go-powershell
 
-![License](https://img.shields.io/github/license/bhendo/go-powershell.svg)
-[![GoDoc](https://godoc.org/github.com/bhendo/go-powershell?status.svg)](https://godoc.org/github.com/bhendo/go-powershell)
-
 This package is inspired by [jPowerShell](https://github.com/profesorfalken/jPowerShell)
 and allows one to run and remote-control a PowerShell session. Use this if you
 don't have a static script that you want to execute, bur rather run dynamic
@@ -10,7 +7,7 @@ commands.
 
 ## Installation
 
-    go get github.com/bhendo/go-powershell
+    go get github.com/benmoss/go-powershell
 
 ## Usage
 
@@ -24,8 +21,8 @@ package main
 import (
 	"fmt"
 
-	ps "github.com/bhendo/go-powershell"
-	"github.com/bhendo/go-powershell/backend"
+	ps "github.com/benmoss/go-powershell"
+	"github.com/benmoss/go-powershell/backend"
 )
 
 func main() {
@@ -62,9 +59,9 @@ package main
 import (
 	"fmt"
 
-	ps "github.com/bhendo/go-powershell"
-	"github.com/bhendo/go-powershell/backend"
-	"github.com/bhendo/go-powershell/middleware"
+	ps "github.com/benmoss/go-powershell"
+	"github.com/benmoss/go-powershell/backend"
+	"github.com/benmoss/go-powershell/middleware"
 )
 
 func main() {
