@@ -4,9 +4,11 @@ package netroute
 
 import (
 	"testing"
+	"time"
+
+	"net"
 
 	"github.com/stretchr/testify/assert"
-	"net"
 )
 
 func TestGetNetRoutes(t *testing.T) {
@@ -26,9 +28,9 @@ func TestAddRemoteRoute(t *testing.T) {
 	_, sn, _ := net.ParseCIDR("192.168.111.0/24")
 	addr := net.ParseIP("1.2.3.4")
 	route := Route{
-		LinkIndex: routes[0].LinkIndex,
+		LinkIndex:         routes[0].LinkIndex,
 		DestinationSubnet: sn,
-		GatewayAddress: addr,
+		GatewayAddress:    addr,
 	}
 
 	for _, r := range routes {
@@ -45,4 +47,27 @@ func TestAddRemoteRoute(t *testing.T) {
 	err = nr.RemoveNetRoute(route.LinkIndex, route.DestinationSubnet, route.GatewayAddress)
 	assert.NoError(t, err)
 	t.Logf("removed route %v", route)
+}
+
+func TestLeakyShells(t *testing.T) {
+	nr := New()
+	done := make(chan bool)
+	for i := 0; i < 1000; i++ {
+		timeout := time.After(10 * time.Second)
+
+		go func() {
+			_, err := nr.GetNetRoutesAll()
+			if err != nil {
+				t.Errorf("error from GetNetRoutesAll: %v", err)
+			}
+			done <- true
+		}()
+
+		select {
+		case <-timeout:
+			t.Fatalf("Timed out waiting for command after %d iterations", i)
+		case <-done:
+			continue
+		}
+	}
 }
