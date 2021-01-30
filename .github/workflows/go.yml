@@ -23,9 +23,3 @@ jobs:
 
     - name: Build
       run: go build -v ./...
-
-    - name: Get Test
-      run: go get -t ./...
-
-    - name: Test
-      run: go test -v ./...
