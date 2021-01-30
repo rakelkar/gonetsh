@@ -24,7 +24,7 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-    - nane: Get Test
+    - name: Get Test
       run: go get -t ./...
 
     - name: Test
