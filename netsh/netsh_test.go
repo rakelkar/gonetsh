@@ -5,23 +5,24 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	utilexec "k8s.io/utils/exec"
+	"k8s.io/utils/exec"
+	fakeexec "k8s.io/utils/exec/testing"
 )
 
-func getFakeExecTemplate(fakeCmd *utilexec.FakeCmd) utilexec.FakeExec {
-	var fakeTemplate []utilexec.FakeCommandAction
-	for i := 0; i < len((*fakeCmd).CombinedOutputScript); i++ {
-		fakeTemplate = append(fakeTemplate, func(cmd string, args ...string) utilexec.Cmd { return utilexec.InitFakeCmd(fakeCmd, cmd, args...) })
+func getFakeExecTemplate(fakeCmd *fakeexec.FakeCmd) fakeexec.FakeExec {
+	var fakeTemplate []fakeexec.FakeCommandAction
+	for i := 0; i < len(fakeCmd.CombinedOutputScript); i++ {
+		fakeTemplate = append(fakeTemplate, func(cmd string, args ...string) exec.Cmd { return fakeexec.InitFakeCmd(fakeCmd, cmd, args...) })
 	}
-	return utilexec.FakeExec{
+	return fakeexec.FakeExec{
 		CommandScript: fakeTemplate,
 	}
 }
 
 func TestGetInterfacesGoldenPath(t *testing.T) {
-	fakeCmd := utilexec.FakeCmd{
-		CombinedOutputScript: []utilexec.FakeCombinedOutputAction{
-			func() ([]byte, error) {
+	fakeCmd := fakeexec.FakeCmd{
+		CombinedOutputScript: []fakeexec.FakeAction{
+			func() ([]byte, []byte, error) {
 				return []byte(`
 
 Configuration for interface "Ethernet"
@@ -46,16 +47,16 @@ Configuration for interface "Loopback Pseudo-Interface 1"
     Subnet Prefix:                        127.0.0.0/8 (mask 255.0.0.0)
     InterfaceMetric:                      75
 
-	`), nil
+	`), nil, nil
 			},
-			func() ([]byte, error) {
+			func() ([]byte, []byte, error) {
 				return []byte(`
 			Idx     Met         MTU          State                Name
 ---  ----------  ----------  ------------  ---------------------------
   9          25        1500  connected     Ethernet
   1          75  4294967295  connected     Loopback Pseudo-Interface 1
   2          15        1500  connected     Local Area Connection* 1
- 14          15        1500  connected     Wi-Fi`), nil
+ 14          15        1500  connected     Wi-Fi`), nil, nil
 			},
 		},
 	}
@@ -85,14 +86,14 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 
 func TestGetInterfacesFailsGracefully(t *testing.T) {
 
-	fakeCmd := utilexec.FakeCmd{
-		CombinedOutputScript: []utilexec.FakeCombinedOutputAction{
+	fakeCmd := fakeexec.FakeCmd{
+		CombinedOutputScript: []fakeexec.FakeAction{
 			// Failure.
-			func() ([]byte, error) { return nil, &utilexec.FakeExitError{Status: 2} },
+			func() ([]byte, []byte, error) { return nil, nil, &fakeexec.FakeExitError{Status: 2} },
 			// Empty Response.
-			func() ([]byte, error) { return []byte{}, nil },
+			func() ([]byte, []byte, error) { return []byte{}, nil, nil },
 			// Junk Response.
-			func() ([]byte, error) { return []byte("fake error from netsh"), nil },
+			func() ([]byte, []byte, error) { return []byte("fake error from netsh"), nil, nil },
 		},
 	}
 
@@ -119,17 +120,17 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 }
 
 func TestGetInterfaceNameToIndexMap(t *testing.T) {
-	fake := utilexec.FakeCmd{
-		CombinedOutputScript: []utilexec.FakeCombinedOutputAction{
-			func() ([]byte, error) { return []byte(`badinput`), nil },
-			func() ([]byte, error) {
+	fake := fakeexec.FakeCmd{
+		CombinedOutputScript: []fakeexec.FakeAction{
+			func() ([]byte, []byte, error) { return []byte(`badinput`), nil, nil },
+			func() ([]byte, []byte, error) {
 				return []byte(`
 			Idx     Met         MTU          State                Name
 ---  ----------  ----------  ------------  ---------------------------
   9          25        1500  connected     Ethernet
   1          75  4294967295  connected     Loopback Pseudo-Interface 1
   2          15        1500  connected     vEthernet (New Virtual Switch)
- 14          15        1500  connected     vEthernet (HNS Internal NIC)`), nil
+ 14          15        1500  connected     vEthernet (HNS Internal NIC)`), nil, nil
 			},
 		},
 	}

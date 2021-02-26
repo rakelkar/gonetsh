@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	ps "github.com/benmoss/go-powershell"
-	psbe "github.com/benmoss/go-powershell/backend"
+	ps "github.com/antoninbas/go-powershell"
+	psbe "github.com/antoninbas/go-powershell/backend"
 
 	"fmt"
 	"math/big"
