@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"errors"
 
@@ -43,7 +42,6 @@ const (
 
 // runner implements Interface in terms of exec("netsh").
 type runner struct {
-	mu   sync.Mutex
 	exec utilexec.Interface
 }
 
