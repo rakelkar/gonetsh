@@ -114,7 +114,7 @@ func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	var interfaces []Ipv4Interface
 	var currentInterface Ipv4Interface
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
-	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
+	cidrPattern := regexp.MustCompile(`\/(.*?)\ `)
 
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (runner *runner) getNetworkInterfaceParameters() (map[string]int, error) {
 
 	indexMap := make(map[string]int)
 
-	reg := regexp.MustCompile("\\s{2,}")
+	reg := regexp.MustCompile(`\s{2,}`)
 
 	for _, line := range outputLines {
 
@@ -297,7 +297,7 @@ func (runner *runner) GetDefaultGatewayIfaceName() (string, error) {
 	}
 
 	// return "not found"
-	return "", fmt.Errorf("Default interface not found")
+	return "", fmt.Errorf("default interface not found")
 }
 
 func (runner *runner) GetInterfaceByName(name string) (Ipv4Interface, error) {
