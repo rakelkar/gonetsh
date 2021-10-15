@@ -70,7 +70,7 @@ Configuration for interface "Loopback Pseudo-Interface 1"
 	interfaces, err := runner.GetInterfaces()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, fakeCmd.CombinedOutputCalls)
-	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
+	assert.EqualValues(t, strings.Split("netsh interface ipv4 show config", " "), fakeCmd.CombinedOutputLog[0])
 	assert.EqualValues(t, 4, len(interfaces))
 	assert.EqualValues(t, Ipv4Interface{
 		Idx:                   14,
@@ -116,7 +116,7 @@ func TestGetInterfacesFailsGracefully(t *testing.T) {
 	assert.Nil(t, interfaces)
 
 	assert.EqualValues(t, 3, fakeCmd.CombinedOutputCalls)
-	assert.EqualValues(t, strings.Split("netsh interface ipv4 show addresses", " "), fakeCmd.CombinedOutputLog[0])
+	assert.EqualValues(t, strings.Split("netsh interface ipv4 show config", " "), fakeCmd.CombinedOutputLog[0])
 }
 
 func TestGetInterfaceNameToIndexMap(t *testing.T) {
