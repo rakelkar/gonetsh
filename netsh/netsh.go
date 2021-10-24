@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"errors"
 
@@ -33,6 +32,8 @@ type Interface interface {
 	GetInterfaceByIP(ipAddr string) (Ipv4Interface, error)
 	// Enable forwarding on the interface (name or index)
 	EnableForwarding(iface string) error
+	// Set the DNS server for interface
+	SetDNSServer(iface string, dns string) error
 }
 
 const (
@@ -41,7 +42,6 @@ const (
 
 // runner implements Interface in terms of exec("netsh").
 type runner struct {
-	mu   sync.Mutex
 	exec utilexec.Interface
 }
 
@@ -55,6 +55,7 @@ type Ipv4Interface struct {
 	SubnetPrefix          int
 	GatewayMetric         int
 	DefaultGatewayAddress string
+	DNS                   string
 }
 
 // New returns a new Interface which will exec netsh.
@@ -100,7 +101,7 @@ func (runner *runner) GetInterfaces() ([]Ipv4Interface, error) {
 // GetInterfaces uses the show addresses command and returns a formatted structure
 func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	args := []string{
-		"interface", "ipv4", "show", "addresses",
+		"interface", "ipv4", "show", "config",
 	}
 
 	output, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
@@ -113,7 +114,7 @@ func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 	var interfaces []Ipv4Interface
 	var currentInterface Ipv4Interface
 	quotedPattern := regexp.MustCompile("\\\"(.*?)\\\"")
-	cidrPattern := regexp.MustCompile("\\/(.*?)\\ ")
+	cidrPattern := regexp.MustCompile(`\/(.*?)\ `)
 
 	if err != nil {
 		return nil, err
@@ -156,6 +157,8 @@ func (runner *runner) getIpAddressConfigurations() ([]Ipv4Interface, error) {
 				currentInterface.IpAddress = value
 			} else if strings.HasPrefix(key, "Default Gateway") {
 				currentInterface.DefaultGatewayAddress = value
+			} else if strings.HasPrefix(key, "Statically Configured DNS Servers") {
+				currentInterface.DNS = value
 			}
 		}
 	}
@@ -197,7 +200,7 @@ func (runner *runner) getNetworkInterfaceParameters() (map[string]int, error) {
 
 	indexMap := make(map[string]int)
 
-	reg := regexp.MustCompile("\\s{2,}")
+	reg := regexp.MustCompile(`\s{2,}`)
 
 	for _, line := range outputLines {
 
@@ -294,7 +297,7 @@ func (runner *runner) GetDefaultGatewayIfaceName() (string, error) {
 	}
 
 	// return "not found"
-	return "", fmt.Errorf("Default interface not found")
+	return "", fmt.Errorf("default interface not found")
 }
 
 func (runner *runner) GetInterfaceByName(name string) (Ipv4Interface, error) {
@@ -327,6 +330,18 @@ func (runner *runner) GetInterfaceByIP(ipAddr string) (Ipv4Interface, error) {
 
 	// return "not found"
 	return Ipv4Interface{}, fmt.Errorf("Interface not found: %v", ipAddr)
+}
+
+func (runner *runner) SetDNSServer(iface string, dns string) error {
+	args := []string{
+		"int", "ipv4", "set", "dns", strconv.Quote(iface), "static", strconv.Quote(dns),
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to set dns on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+
+	return nil
 }
 
 // Restore is part of Interface.

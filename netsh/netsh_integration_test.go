@@ -35,3 +35,9 @@ func TestForwarding(t *testing.T) {
 	err := h.EnableForwarding("Wi-Fi")
 	assert.NoError(t, err)
 }
+
+func TestSetDNSServer(t *testing.T) {
+	h := New(exec.New())
+	err := h.SetDNSServer("Wi-Fi", "127.0.0.1")
+	assert.NoError(t, err)
+}
