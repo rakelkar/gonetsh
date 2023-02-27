@@ -343,6 +343,27 @@ func (runner *runner) SetDNSServer(iface string, dns string) error {
 
 	return nil
 }
+func (runner *runner) DeleteDNSServers(iface string) error {
+	args := []string{
+		"interface", "ipv4", "delete", "dnsservers", strconv.Quote(iface), "all",
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to delete dns servers on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+	return nil
+}
+
+func (runner *runner) SetDHCP(iface string) error {
+	args := []string{
+		"interface", "ipv4", "set", "dnsservers", strconv.Quote(iface), "dhcp",
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to set DHCP on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+	return nil
+}
 
 // Restore is part of Interface.
 func (runner *runner) Restore(args []string) error {
