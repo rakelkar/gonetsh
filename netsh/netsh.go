@@ -2,6 +2,9 @@ package netsh
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +13,26 @@ import (
 
 	utilexec "k8s.io/utils/exec"
 )
+
+var _pipe io.WriteCloser
+
+func ExecuteNetsh(netshcmd string, cmd string) {
+	if _pipe == nil {
+		executablePath := "netsh"
+		_cmd := exec.Command(executablePath)
+		var err error
+		_pipe, err = _cmd.StdinPipe()
+		//pipeout, err := _cmd.StdoutPipe()
+		if err := _cmd.Start(); err != nil {
+			log.Println("Cant start netsh")
+		}
+		if err != nil {
+			log.Println("Can't get pipe", err)
+		}
+	}
+	_pipe.Write([]byte(cmd + "\n"))
+
+}
 
 // Interface is an injectable interface for running netsh commands.  Implementations must be goroutine-safe.
 type Interface interface {
@@ -30,10 +53,14 @@ type Interface interface {
 	GetInterfaceByName(name string) (Ipv4Interface, error)
 	// Gets an interface by ip address in the format a.b.c.d
 	GetInterfaceByIP(ipAddr string) (Ipv4Interface, error)
+	SetInterfaceIP(iface string, ip string, mask string) error
 	// Enable forwarding on the interface (name or index)
 	EnableForwarding(iface string) error
 	// Set the DNS server for interface
 	SetDNSServer(iface string, dns string) error
+	DeleteDNSServers(iface string) error
+	SetDHCP(iface string) error
+	AddStaticRoute(iface string, cidr string, gateway string) error
 }
 
 const (
@@ -232,6 +259,18 @@ func (runner *runner) EnableForwarding(iface string) error {
 	return nil
 }
 
+// add static route
+func (runner *runner) AddStaticRoute(iface string, cidr string, gateway string) error {
+	args := []string{
+		"int", "ipv4", "add", "route", strconv.Quote(cidr), strconv.Quote(iface), strconv.Quote(gateway),
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to add static route on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+	return nil
+}
+
 // EnsurePortProxyRule checks if the specified redirect exists, if not creates it.
 func (runner *runner) EnsurePortProxyRule(args []string) (bool, error) {
 	out, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput()
@@ -330,6 +369,20 @@ func (runner *runner) GetInterfaceByIP(ipAddr string) (Ipv4Interface, error) {
 
 	// return "not found"
 	return Ipv4Interface{}, fmt.Errorf("Interface not found: %v", ipAddr)
+}
+
+// set interface ip address using netsh
+func (runner *runner) SetInterfaceIP(iface string, ip string, mask string) error {
+	args := []string{
+		"int", "ipv4", "set", "address", strconv.Quote(iface), "static", strconv.Quote(ip), strconv.Quote(mask),
+	}
+	cmd := strings.Join(args, " ")
+	log.Print("EXECUTING SetInterfaceIP: ", cmd)
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to set ip on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+
+	return nil
 }
 
 func (runner *runner) SetDNSServer(iface string, dns string) error {
