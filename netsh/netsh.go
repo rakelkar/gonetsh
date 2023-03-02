@@ -61,6 +61,10 @@ type Interface interface {
 	DeleteDNSServers(iface string) error
 	SetDHCP(iface string) error
 	AddStaticRoute(iface string, cidr string, gateway string) error
+	EnableFw() error
+	// TODO expand with more features, currently only block or allow all traffic on an interface and set direction
+	AddFwRule(name string, iface string, action string, direction string) error
+	RemoveFwRule(name string) error
 }
 
 const (
@@ -267,6 +271,39 @@ func (runner *runner) AddStaticRoute(iface string, cidr string, gateway string) 
 	cmd := strings.Join(args, " ")
 	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to add static route on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+	return nil
+}
+
+func (runner *runner) EnableFw() error {
+	args := []string{
+		"advfirewall", "set", "allprofiles", "state", "on",
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to enable windows firewall, error: %v. cmd: %v. stdout: %v", err.Error(), cmd, string(stdout))
+	}
+	return nil
+}
+
+func (runner *runner) AddFwRule(name string, iface string, action string, direction string) error {
+	args := []string{
+		"advfirewall", "firewall", "add", "rule", "name=" + strconv.Quote(name), "dir=" + strconv.Quote(direction), "localip=" + strconv.Quote(iface), "action=" + strconv.Quote(action),
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to add fw rule on [%v], error: %v. cmd: %v. stdout: %v", iface, err.Error(), cmd, string(stdout))
+	}
+	return nil
+}
+
+func (runner *runner) RemoveFwRule(name string) error {
+	args := []string{
+		"advfirewall", "firewall", "delete", "rule", "name=" + strconv.Quote(name),
+	}
+	cmd := strings.Join(args, " ")
+	if stdout, err := runner.exec.Command(cmdNetsh, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to remove fw rule, error: %v. cmd: %v. stdout: %v", err.Error(), cmd, string(stdout))
 	}
 	return nil
 }
